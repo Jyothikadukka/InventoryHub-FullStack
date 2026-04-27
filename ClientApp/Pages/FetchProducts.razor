@@ -1,0 +1,72 @@
+// Copilot helped generate API integration logic using HttpClient
+// and suggested adding error handling with try-catch for robustness.
+@page "/fetchproducts"
+@using System.Text.Json
+@inject HttpClient Http
+
+<h3>Product List</h3>
+
+<ul>
+    @if (products != null)
+    {
+        foreach (var product in products)
+        {
+            <li>
+    @product.Name - $@product.Price 
+    (Category: @product.Category.Name)
+</li>
+        }
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <li style="color:red">@errorMessage</li>
+    }
+    else
+    {
+        <li>Loading...</li>
+    }
+</ul>
+
+@code {
+    private Product[]? products;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // ⚠️ Replace 5219 with your backend port if different
+            var response = await Http.GetAsync("http://localhost:5219/api/productlist");
+
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            products = JsonSerializer.Deserialize<Product[]>(json,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error: " + ex.Message;
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    public class Product
+    {
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public double Price { get; set; }
+    public int Stock { get; set; }
+    public Category Category { get; set; } = new();
+    }
+
+public class Category
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+}
+}
